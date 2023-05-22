@@ -6,7 +6,8 @@ from bs4 import BeautifulSoup
 
 def business_endpoint(request, business_name):
     business_name = unquote(business_name)
-    business_url = 'https://www.lendingtree.com/reviews/business/' + business_name
+    print(business_name)
+    business_url = f'https://www.lendingtree.com/reviews/business/{business_name}'
 
     try:
         if request.method == "GET":
@@ -15,18 +16,19 @@ def business_endpoint(request, business_name):
                 html_content = response.text
                 soup = BeautifulSoup(html_content, 'html.parser')
                 reviews_element = soup.find('span', {'class': 'reviews'})
-
+                reviews = reviews_element.text.strip() if reviews_element else 'N/A'
                 business_data = {
                     'name': business_name,
-                    'address': reviews_element.text if reviews_element else 'N/A',
+                    'reviews': reviews,
                 }
                 return JsonResponse(business_data)
             else:
-                return HttpResponse('Failed to fetch business data.', status=500)
+                rerror_message = 'An error occurred.'
+                return HttpResponse(error_message, status=500)
 
         else:
             return HttpResponse('Method not allowed.', status=405)
 
     except Exception as e:
-        error_message = f'An error occurred: {str(e)}'
+        error_message = 'An error occurred.'
         return HttpResponse(error_message, status=500)
