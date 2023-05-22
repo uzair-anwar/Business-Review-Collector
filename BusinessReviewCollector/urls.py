@@ -5,5 +5,5 @@ from .views import business_endpoint
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("business/", business_endpoint, name="business")
+    path("business/<str:business_name>", business_endpoint, name="business")
 ]
