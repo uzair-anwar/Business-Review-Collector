@@ -1,7 +1,9 @@
+import datetime
 import requests
 from urllib.parse import unquote
 from django.http import JsonResponse, HttpResponse
 from bs4 import BeautifulSoup
+from .models import Review
 
 
 def business_endpoint(request, business_name):
@@ -17,21 +19,31 @@ def business_endpoint(request, business_name):
                 for review in reviews:
                     review_title = review.find('p', class_="reviewTitle").text
                     review_content = review.find('p', class_="reviewText").text
-                    review_consumerName = review.find(
+                    review_auther = review.find(
                         'p', class_="consumerName").text.strip()
-                    review_consumerName = " ".join(review_consumerName.split())
+                    review_auther = " ".join(review_auther.split())
                     review_date = review.find(
                         'p', class_="consumerReviewDate").text
+                    date = datetime.datetime.strptime(
+                        review_date, "Reviewed in %B %Y").date()
                     review_star = review.find(
                         'div', class_="numRec").text.strip()
                     review_star = " ".join(review_star.split())[1]
                     reviews_data.append({
                         "title": review_title,
                         "content": review_content,
-                        "consumerName": review_consumerName,
-                        "date": review_date,
+                        "consumerName": review_auther,
+                        "date": date,
                         "star": review_star
                     })
+                    review_obj = Review(
+                        title=review_title,
+                        content=review_content,
+                        auther=review_auther,
+                        date=date,
+                        stars=float(review_star)
+                    )
+                    review_obj.save()
 
                 return JsonResponse(reviews_data, safe=False)
         else:
