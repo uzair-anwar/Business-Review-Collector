@@ -5,6 +5,5 @@ from .views import business_endpoint
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    re_path(r'^business/(?P<business_name>.+)/$',
-            business_endpoint, name='business'),
+    path('<str:business_url>/', business_endpoint, name='business_url'),
 ]

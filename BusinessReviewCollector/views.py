@@ -2,15 +2,17 @@ import datetime
 import requests
 from urllib.parse import unquote
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from bs4 import BeautifulSoup
 from .models import Review
 
 
-def business_endpoint(request, business_name):
-    business_name = unquote(business_name)
+@csrf_exempt
+def business_endpoint(request, business_url):
+    business_url = unquote(business_url)
     try:
         if request.method == "GET":
-            response = requests.get(business_name)
+            response = requests.get(business_url)
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, 'html.parser')
                 reviews = soup.find_all('div', class_='mainReviews')
@@ -45,10 +47,17 @@ def business_endpoint(request, business_name):
                     )
                     review_obj.save()
 
-                return JsonResponse(reviews_data, safe=False)
+                return JsonResponse(reviews_data, safe=False, status=200)
+            else:
+                return HttpResponse('Failed to retrieve data from the business URL.', status=403)
         else:
-            return HttpResponse('Method not allowed.', status=405)
-
+            return HttpResponse('Invalid request method.', status=400)
+    except requests.exceptions.RequestException as e:
+        error_message = f'An error occurred while making the request: {str(e)}'
+        return HttpResponse(error_message, status=500)
+    except (ValueError, KeyError) as e:
+        error_message = f'An error occurred while parsing the data: {str(e)}'
+        return HttpResponse(error_message, status=500)
     except Exception as e:
         error_message = f'An error occurred: {str(e)}'
         return HttpResponse(error_message, status=500)
